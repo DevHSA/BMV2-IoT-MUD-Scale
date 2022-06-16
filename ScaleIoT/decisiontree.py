@@ -25,7 +25,7 @@ Initialized Corresponding LevelCounters, and the decision tree and added
 the first node which is NULL
 '''
 
-levelCounters = [1,1,1,1,1,1,1,1,1];
+levelCounters = [1,1,1,1,1,1];
 G = nx.DiGraph();
 G.add_node('Null')
 
@@ -68,16 +68,17 @@ def checkIfPresentAndReturn(valueToCheck, neighborList):
 #FUNCTION TO ADD RULES and SEND CORRESPONDING SWITCH COMMANDS
 def addSwitchCommand(addedNodeArray, addedStateArray, levelHeaders, p4info_helper, s1, readTableRules):
 
-    # print("Adding Switch Command")
-    print(addSwitchCommand.cntr)
-    print(addedNodeArray)
-    print(addedStateArray)
+    print("Adding Switch Command")
+    # print(addSwitchCommand.cntr)
+    # print(addedNodeArray)
+    # print(addedStateArray)
 
     addSwitchCommand.cntr = addSwitchCommand.cntr + 1
     #for every addition, generate a corresponding switch command
-    for i in range(0,8):
+    for i in range(0,5):
 
-
+        
+        
         #Check if the node is to be added with the help of stub values X and -1
         if addedNodeArray[i]!='X' and addedStateArray[i]!='-1':
 
@@ -92,10 +93,10 @@ def addSwitchCommand(addedNodeArray, addedStateArray, levelHeaders, p4info_helpe
             #Logic to convert to Hex values
             if addedNodeArray[i] == '*': #if * then dont touch it. it is taken care of below
                 convertedValue = addedNodeArray[i]
-            elif levelHeaders[i] == 'sMAC' or levelHeaders[i] == 'dMAC':
-#                 octet = addedNodeArray[i].split(':')
-#                 convertedValue = '0x'+octet[0]+octet[1]+octet[2]+octet[3]+octet[4]+octet[5]
-                convertedValue = str(addedNodeArray[i])
+#             elif levelHeaders[i] == 'sMAC' or levelHeaders[i] == 'dMAC':
+# #                 octet = addedNodeArray[i].split(':')
+# #                 convertedValue = '0x'+octet[0]+octet[1]+octet[2]+octet[3]+octet[4]+octet[5]
+#                 convertedValue = str(addedNodeArray[i])
             elif levelHeaders[i] == 'srcIP' or levelHeaders[i] == 'dstIP':
 #                 octet = addedNodeArray[i].split('.')
 #                 convertedValue = '0x'+''.join((hex(int(i))[2:] for i in octet))
@@ -109,26 +110,36 @@ def addSwitchCommand(addedNodeArray, addedStateArray, levelHeaders, p4info_helpe
             We are using dictionaries here so that code could be compressed for levels
             2 to 7(which are numbered 1 to  6).
             '''
+            #here we are using only 3 values in the map corres to header fields in the middle
 
-            tablesmap = {1 : "MyIngress.dMAC_exact" ,
-                        2 : "MyIngress.typEth_exact",
-                        3 : "MyIngress.proto_exact",
-                        4 : "MyIngress.sPort_exact",
-                        5 : "MyIngress.dPort_exact",
-                        6 : "MyIngress.srcIP_exact"}
-            tablesdefaultmap = {1 : "MyIngress.dMAC_default",
-                                2 : "MyIngress.typEth_default",
-                                3: "MyIngress.proto_default",
-                                4: "MyIngress.sPort_default",
-                                5: "MyIngress.dPort_default",
-                                6: "MyIngress.srcIP_default"}
-            matchesmap = {  1 : "hdr.ethernet.dEth",
-                            2 : "hdr.ethernet.typeEth",
-                            3 : "hdr.ipv4.protocol",
-                            4 : "meta.sport",
-                            5 : "meta.dport",
-                            6 : "hdr.ipv4.srcAddr"
+            tablesmap = {
+
+                        1 : "MyIngress.DSCP_exact" ,#look at this ---------xxxxxxxxxxxxxxxxxxxxxx----------
+                        2 : "MyIngress.proto_exact",
+                        3 : "MyIngress.dPort_exact",
+
+                        }
+            tablesdefaultmap = {
+                            1 : "MyIngress.DSCP_default" ,#look at this ---------xxxxxxxxxxxxxxxxxxxxxx----------
+                            2 : "MyIngress.proto_default",
+                            3 : "MyIngress.dPort_default"
                             }
+            #this is a reference for earlier header fields 
+            #matchesmap = {  1 : "hdr.ethernet.dEth",
+            #                 2 : "hdr.ethernet.typeEth",
+            #                 3 : "hdr.ipv4.protocol",
+            #                 4 : "meta.sport",
+            #                 5 : "meta.dport",
+            #                 6 : "hdr.ipv4.srcAddr"
+            #                 }
+
+            matchesmap = {
+                        1 : "hdr.ipv4.diffserv",
+                        2 : "hdr.ipv4.protocol",                        
+                        3 : "meta.dport"
+                        }
+                        
+            #changes in the dictionaries done above ----------------------------*****************
             '''
             this is the first level which is used for adding table entry
             to match source MAC address
@@ -143,19 +154,23 @@ def addSwitchCommand(addedNodeArray, addedStateArray, levelHeaders, p4info_helpe
                     matchFields = convertedValue
                     actionParams = addedStateArray[i+1]
                     nxtState = int(addedStateArray[i+1])
+                    currState = int(addedStateArray[i])
                     command='table_add '+levelHeaders[i]+'_exact'+' store_state_'+levelHeaders[i]+' '+convertedValue+' => '+addedStateArray[i+1]
 
-                    ##sETH TABLE ENTRY
+                
                     table_entry = p4info_helper.buildTableEntry(
-                        table_name="MyIngress.sMAC_exact",
+                        table_name="MyIngress.srcIP_exact",
                         match_fields={
-                            "hdr.ethernet.sEth": matchFields
+                            "meta.current_state": currState,
+                            "hdr.ipv4.srcAddr": matchFields
                         },
                         action_name="MyIngress.ns_exact",
                         action_params={
                             "next_state": nxtState,
                         })
+                    
                     s1.WriteTableEntry(table_entry)
+
 
                 #if it is to be added in the default table
                 elif addedNodeArray[i]=="*":
@@ -164,7 +179,7 @@ def addSwitchCommand(addedNodeArray, addedStateArray, levelHeaders, p4info_helpe
                     command='table_add '+levelHeaders[i]+'_default'+' store_state_'+levelHeaders[i]+'_default1'+' 0 => '+addedStateArray[i+1]
 
                     table_entry = p4info_helper.buildTableEntry(
-                        table_name="MyIngress.sMAC_default",
+                        table_name="MyIngress.srcIP_default",
                         match_fields={
                             "meta.stub_current_state_value": 0
                         },
@@ -174,8 +189,9 @@ def addSwitchCommand(addedNodeArray, addedStateArray, levelHeaders, p4info_helpe
                         })
                     s1.WriteTableEntry(table_entry)
 
-            #handling level 1 to 6 for adding table entries
-            elif i < 7:
+
+            #handling level 1 to 3 for adding table entries
+            elif i < 4:
 
                 #print("Entered 0")
                 #if it is to be added in the exact table
@@ -184,12 +200,7 @@ def addSwitchCommand(addedNodeArray, addedStateArray, levelHeaders, p4info_helpe
                     currState = int(addedStateArray[i])
                     nxtState = int(addedStateArray[i+1])
 
-                    if i == 2:
-                        matchfields = int(matchFields , 16)
-                    elif i in (3,4,5) :
-                        matchfields = int(matchFields)
-                    else :
-                        matchfields = matchFields
+                    matchfields = int(matchFields)
 
                     ##dETH TABLE ENTRY
                     table_entry = p4info_helper.buildTableEntry(
@@ -223,7 +234,9 @@ def addSwitchCommand(addedNodeArray, addedStateArray, levelHeaders, p4info_helpe
                         })
                     s1.WriteTableEntry(table_entry)
 
-            else:
+                
+
+            else: # last level
                 #print("Entered 8")
                 #if the action is forward, then push
                 if addedNodeArray[i] == "forward":
@@ -266,6 +279,8 @@ def addSwitchCommand(addedNodeArray, addedStateArray, levelHeaders, p4info_helpe
                             "switchPort": 2
                         })
                     s1.WriteTableEntry(table_entry)
+            print(convertedValue)
+            print("--------------------------------------")
             '''
 
             IGNORE THE BELOW COMMENTED PART WHICH PREVIOUSLY ADDED TABLE ENTRIES
@@ -559,7 +574,7 @@ def addSwitchCommand(addedNodeArray, addedStateArray, levelHeaders, p4info_helpe
             '''
 
 
-            # print("Reached end");
+    
             #Handle other levels other than the first and last
 #             else:
 # #                 print("Entered ANY")
@@ -592,18 +607,16 @@ def convertDT(data, p4info_helper, s1, readTableRules):
     # data = pd.read_csv(pathPrefix + "GeneratedDatasetACL" + pathSuffix, dtype=str)
 
     levelHeaders = data.columns
-    # print(data.columns)
 
-    #newDf = data[['typEth', 'proto', 'sPort', 'dPort', 'srcIP', 'dstIP', 'sMAC', 'dMAC', 'action']]
-    #levelHeaders = ['typEth', 'proto', 'sPort', 'dPort', 'sMAC', 'dMAC', 'srcIP', 'dstIP', 'action']
-    ##Redundant conversion. Can be changed
-
-    newDf = data[['sMAC', 'dMAC', 'typEth', 'proto', 'sPort', 'dPort', 'srcIP', 'dstIP',  'action']]
-    levelHeaders = ['sMAC', 'dMAC', 'typEth', 'proto', 'sPort', 'dPort', 'srcIP', 'dstIP',  'action']
+    newDf = data[['srcIP','DSCP','proto','dPort','dstIP', 'action']]
+    levelHeaders = ['srcIP','DSCP','proto','dPort','dstIP', 'action']
 
     # print(newDf)
+    # print("Ginti shuru")
+
     for index,row in newDf.iterrows():
 
+        
         #Graph Variables to keep track
         currentNode = 'Null'
         neighborList = []
@@ -616,11 +629,12 @@ def convertDT(data, p4info_helper, s1, readTableRules):
 
 
         #Variables to convert to switch commands
-        addedNodeArray = ['X'] * 9
-        addedStateArray = ['-1'] * 9
+        addedNodeArray = ['X'] * 6
+        addedStateArray = ['-1'] * 6
 
         # print(listView);
         for iter in range(0,len(listView)):
+
 
             #Preambles
             neighborList = list(G.neighbors(currentNode))
@@ -890,7 +904,7 @@ def convertDT(data, p4info_helper, s1, readTableRules):
 # ###********************ADDITION*********************###
 # #Main loop to start adding the nodes. Goes through each row of the ACL file
 # for index,row in newDf.iterrows():
-#
+#addedStateArray
 #     #Graph Variables to keep track
 #     currentNode = 'Null'
 #     neighborList = []

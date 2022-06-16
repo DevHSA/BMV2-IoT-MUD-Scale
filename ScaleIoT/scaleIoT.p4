@@ -131,6 +131,8 @@ parser MyParser(packet_in packet,
 
         packet.extract(hdr.ipv4);
 
+
+
         transition select(hdr.ipv4.protocol){
 
             TYPE_TCP: parse_tcp;
@@ -275,85 +277,140 @@ control MyIngress(inout headers hdr,
 
     //**LEVEL 1**//
     //sMAC_exact table
-    table sMAC_exact{
-        key= {
-            hdr.ethernet.sEth:exact;
-        }
-        actions = {
-                ns_exact;
-                default_action_one;
-        }
-        size = 1024;
-        default_action = default_action_one();
+    // table sMAC_exact{
+    //     key= {
+    //         hdr.ethernet.sEth:exact;
+    //     }
+    //     actions = {
+    //             ns_exact;
+    //             default_action_one;
+    //     }
+    //     size = 1024;
+    //     default_action = default_action_one();
+    // }
+    //
+    // table sMAC_default{
+    //     key= {
+    //         meta.stub_current_state_value:exact;
+    //     }
+    //     actions = {
+    //             ns_default;
+    //             drop;
+    //     }
+    //     size = 1024;
+    //     default_action = drop();
+    //
+    // }
+    //
+    // //**LEVEL 2**//
+    // table dMAC_exact{
+    //     key= {
+    //         meta.current_state:exact;
+    //         hdr.ethernet.dEth:exact;
+    //     }
+    //     actions = {
+    //           ns_exact;
+    //           NoAction;
+    //     }
+    //     size = 1024;
+    //     default_action = NoAction();
+    // }
+    //
+    // table dMAC_default{
+    //     key= {
+    //         meta.current_state:exact;
+    //     }
+    //     actions = {
+    //         ns_default;
+    //         drop;
+    //     }
+    //     size = 1024;
+    //     default_action = drop();
+    // }
+    //
+    // //**LEVEL 3**//
+    // table typEth_exact{
+    //     key = {
+    //         meta.current_state:exact;
+    //         hdr.ethernet.typeEth:exact;
+    //     }
+    //     actions = {
+    //         ns_exact;
+    //         NoAction;
+    //     }
+    //
+    //     size = 1024;
+    //     default_action = NoAction();
+    // }
+    //
+    // table typEth_default{
+    //    key= {
+    //        meta.current_state:exact;
+    //    }
+    //    actions = {
+    //        ns_default;
+    //        drop;
+    //    }
+    //    size = 1024;
+    //    default_action =drop();
+    // }
+
+
+    //**LEVEL 1**//
+    table srcIP_exact{
+      key={
+        meta.current_state:exact;
+        hdr.ipv4.srcAddr:exact;
+      }
+      actions = {
+        ns_exact;
+        NoAction;
+      }
+      size = 1024;
+      default_action = NoAction();
     }
 
-    table sMAC_default{
-        key= {
-            meta.stub_current_state_value:exact;
-        }
-        actions = {
-                ns_default;
-                drop;
-        }
-        size = 1024;
-        default_action = drop();
+    table srcIP_default{
+      key={
+        meta.current_state:exact;
 
+      }
+      actions = {
+        ns_default;
+        drop;
+      }
+      size = 1024;
+      default_action =drop();
     }
 
     //**LEVEL 2**//
-    table dMAC_exact{
-        key= {
-            meta.current_state:exact;
-            hdr.ethernet.dEth:exact;
-        }
-        actions = {
-              ns_exact;
-              NoAction;
-        }
-        size = 1024;
-        default_action = NoAction();
+    table DSCP_exact{
+      key={
+        meta.current_state:exact;
+        hdr.ipv4.diffserv:exact;
+      }
+      actions = {
+        ns_exact;
+        NoAction;
+      }
+      size = 1024;
+      default_action = NoAction();
     }
 
-    table dMAC_default{
-        key= {
-            meta.current_state:exact;
-        }
-        actions = {
-            ns_default;
-            drop;
-        }
-        size = 1024;
-        default_action = drop();
+    table DSCP_default{
+      key={
+        meta.current_state:exact;
+
+      }
+      actions = {
+        ns_default;
+        drop;
+      }
+      size = 1024;
+      default_action =drop();
     }
 
     //**LEVEL 3**//
-    table typEth_exact{
-        key = {
-            meta.current_state:exact;
-            hdr.ethernet.typeEth:exact;
-        }
-        actions = {
-            ns_exact;
-            NoAction;
-        }
-
-        size = 1024;
-        default_action = NoAction();
-    }
-
-    table typEth_default{
-       key= {
-           meta.current_state:exact;
-       }
-       actions = {
-           ns_default;
-           drop;
-       }
-       size = 1024;
-       default_action =drop();
-    }
-
-    //**LEVEL 4**//
     table proto_exact{
       key={
 
@@ -383,34 +440,34 @@ control MyIngress(inout headers hdr,
     default_action = drop();
     }
 
-    //**LEVEL 5**//
-    table sPort_exact{
-      key={
-        meta.current_state:exact;
-        meta.sport:exact;
-      }
-      actions = {
-        ns_exact;
-        NoAction;
-      }
-      size = 1024;
-      default_action =NoAction();
-    }
+    // //**LEVEL 5**//
+    // table sPort_exact{
+    //   key={
+    //     meta.current_state:exact;
+    //     meta.sport:exact;
+    //   }
+    //   actions = {
+    //     ns_exact;
+    //     NoAction;
+    //   }
+    //   size = 1024;
+    //   default_action =NoAction();
+    // }
+    //
+    // table sPort_default{
+    //   key={
+    //     meta.current_state:exact;
+    //
+    //   }
+    //   actions = {
+    //     ns_default;
+    //     drop;
+    //   }
+    //   size = 1024;
+    //   default_action =drop();
+    // }
 
-    table sPort_default{
-      key={
-        meta.current_state:exact;
-
-      }
-      actions = {
-        ns_default;
-        drop;
-      }
-      size = 1024;
-      default_action =drop();
-    }
-
-    //**LEVEL 6**//
+    //**LEVEL 4**//
     table dPort_exact{
       key={
         meta.current_state:exact;
@@ -437,34 +494,34 @@ control MyIngress(inout headers hdr,
       default_action =drop();
     }
 
-    //**LEVEL 7**//
-    table srcIP_exact{
-      key={
-        meta.current_state:exact;
-        hdr.ipv4.srcAddr:exact;
-      }
-      actions = {
-        ns_exact;
-        NoAction;
-      }
-      size = 1024;
-      default_action = NoAction();
-    }
+    // //**LEVEL 4**//
+    // table srcIP_exact{
+    //   key={
+    //     meta.current_state:exact;
+    //     hdr.ipv4.srcAddr:exact;
+    //   }
+    //   actions = {
+    //     ns_exact;
+    //     NoAction;
+    //   }
+    //   size = 1024;
+    //   default_action = NoAction();
+    // }
+    //
+    // table srcIP_default{
+    //   key={
+    //     meta.current_state:exact;
+    //
+    //   }
+    //   actions = {
+    //     ns_default;
+    //     drop;
+    //   }
+    //   size = 1024;
+    //   default_action =drop();
+    // }
 
-    table srcIP_default{
-      key={
-        meta.current_state:exact;
-
-      }
-      actions = {
-        ns_default;
-        drop;
-      }
-      size = 1024;
-      default_action =drop();
-    }
-
-    //**LEVEL 8**//
+    //**LEVEL 5**//
     table dstIP_exact{
       key={
         meta.current_state:exact;
@@ -505,70 +562,79 @@ control MyIngress(inout headers hdr,
 
         //Getting the port numbers
         if (hdr.tcp.isValid()){
-            meta.sport= hdr.tcp.srcPort;
+            // meta.sport= hdr.tcp.srcPort;
             meta.dport= hdr.tcp.dstPort;
         }
         else if (hdr.udp.isValid()){
-            meta.sport= hdr.udp.srcPort;
+            // meta.sport= hdr.udp.srcPort;
             meta.dport= hdr.udp.dstPort;
         }
 
         //Match Action pipeline definition
-        sMAC_exact.apply();
-        if(meta.flag==0){
-            sMAC_default.apply();
-        }
-        if(meta.dropFlag == 1) return;
+        // sMAC_exact.apply();
+        // if(meta.flag==0){
+        //     sMAC_default.apply();
+        // }
+        // if(meta.dropFlag == 1) return;
+        //
+        // meta.flag=0;
+        // dMAC_exact.apply();
+        // if(meta.flag==0){
+        //     dMAC_default.apply();
+        // }
+        // if(meta.dropFlag == 1) return;
+        //
+        // meta.flag=0;
+        // typEth_exact.apply();
+        // if(meta.flag==0){
+        //     typEth_default.apply();
+        // }
+        // if(meta.dropFlag == 1) return;
+        //
+        // meta.flag=0;
 
         meta.flag=0;
-        dMAC_exact.apply();
-        if(meta.flag==0){
-            dMAC_default.apply();
-        }
-        if(meta.dropFlag == 1) return;
-
-        meta.flag=0;
-        typEth_exact.apply();
-        if(meta.flag==0){
-            typEth_default.apply();
-        }
-        if(meta.dropFlag == 1) return;
-
-        meta.flag=0;
-        proto_exact.apply();
-        if(meta.flag==0){
-            proto_default.apply();
-        }
-        if(meta.dropFlag == 1) return;
-
-        meta.flag=0;
-        sPort_exact.apply();
-        if(meta.flag==0){
-            sPort_default.apply();
-        }
-        if(meta.dropFlag == 1) return;
-
-        meta.flag=0;
-        dPort_exact.apply();
-        if(meta.flag==0){
-            dPort_default.apply();
-        }
-        if(meta.dropFlag == 1) return;
-
-        meta.flag=0;
-        srcIP_exact.apply();
+        srcIP_exact.apply();//first header
         if(meta.flag==0){
             srcIP_default.apply();
         }
         if(meta.dropFlag == 1) return;
 
         meta.flag=0;
-        dstIP_exact.apply();
+        DSCP_exact.apply();//second header
+        if(meta.flag==0){
+            DSCP_default.apply();
+        }
+        if(meta.dropFlag == 1) return;
+
+        meta.flag = 0;
+        proto_exact.apply();//third header
+        if(meta.flag==0){
+            proto_default.apply();
+        }
+        if(meta.dropFlag == 1) return;
+
+        // meta.flag=0;
+        // sPort_exact.apply();
+        // if(meta.flag==0){
+        //     sPort_default.apply();
+        // }
+        // if(meta.dropFlag == 1) return;
+
+        meta.flag=0;
+        dPort_exact.apply();//fourth header
+        if(meta.flag==0){
+            dPort_default.apply();
+        }
+        if(meta.dropFlag == 1) return;
+
+        meta.flag=0;
+        dstIP_exact.apply();//fifth header
         if(meta.flag==0){
             dstIP_default.apply();
         }
         if(meta.dropFlag == 1) return;
-        
+
 
         }
 

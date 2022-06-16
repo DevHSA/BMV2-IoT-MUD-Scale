@@ -135,7 +135,7 @@ def send_DHCP(iface):
 def send_test(iface):
 
     pkt = Ether(src="00:0b:82:01:fc:42", dst="00:0b:82:01:fc:46", type=0x0800)
-    pkt = pkt / IP(proto=17 , src="224.239.227.216", dst="224.239.227.215")
+    pkt = pkt / IP(proto=17 , src="224.239.227.216", dst="224.239.227.215", )
     pkt = pkt / TCP(sport=443, dport=53)
 
     sendp(pkt, iface=iface, verbose=True)
@@ -151,46 +151,46 @@ def correctness_sendPacket(iface, listView):
     we are assigning some default values whenever we encounter a wild card in the listView array
     '''
 
-    if(listView[0] == '*'):
-        src = "00:00:5e:00:53:af"
-    else:
-        src = listView[0]
+    # if(listView[0] == '*'):
+    #     src = "00:00:5e:00:53:af"
+    # else:
+    #     src = listView[0]
 
-    if(listView[1] == '*'):
-        dst = "00:00:5e:00:53:af"
-    else:
-        dst = listView[1]
+    # if(listView[1] == '*'):
+    #     dst = "00:00:5e:00:53:af"
+    # else:
+    #     dst = listView[1]
 
-    if(listView[2] == '*'):
-        typeEth = 0x0000
-    else :
-        typeEth = int(listView[2], 16)
-    # print(type(typeEth))
+    # if(listView[2] == '*'):
+    #     typeEth = 0x0000
+    # else :
+    #     typeEth = int(listView[2], 16)
+    # # print(type(typeEth))
 
-    if(listView[3] == '*'):
+    if(listView[0] == '*'): #now we have sip
         sIP = "0.0.0.1"
     else:
-        sIP = listView[3]
+        sIP = listView[0]
 
-    if(listView[4] == '*'):
-        dIP = "0.0.0.4"
+    if(listView[1] == '*'): #dscp
+        DSCP = 1
     else:
-        dIP = listView[4]
+        DSCP = int(listView[1])
 
-    if(listView[5] == '*'):
+    if(listView[2] == '*'): #proto
         proto = 17
     else :
-        proto = int(listView[5])
+        proto = int(listView[2])
 
-    if(listView[6] == '*'):
-        sport = 20
-    else:
-        sport = int(listView[6])
-
-    if(listView[7] == '*'):
+    if(listView[3] == '*'): #dport
         dport = 20
     else:
-        dport = int(listView[7])
+        dport = int(listView[3])
+
+    if(listView[4] == '*'): #dip
+        dIP = "0.0.0.1"
+    else:
+        dIP = listView[4]
 
 
     '''
@@ -208,12 +208,14 @@ def correctness_sendPacket(iface, listView):
     here we are assigning TCP or UDP based on the protocol value
     17 is for UDP
     '''
-    pkt = Ether(src=src, dst=dst, type=typeEth)
-    pkt = pkt / IP(proto=proto , src=sIP, dst=dIP)
+    pkt = Ether(src="00:0b:82:01:fc:42", dst="00:0b:82:01:fc:46", type=0x0800)
+    pkt = pkt / IP(proto= proto , src=sIP, dst=dIP, tos = DSCP)
+    pkt = pkt / TCP(sport=443, dport=dport)
+
     if proto == 17:
-        pkt = pkt / UDP(sport=sport, dport=dport)
+        pkt = pkt / UDP(sport = 25, dport=dport)
     else:
-        pkt = pkt / TCP(sport=sport, dport=dport)
+        pkt = pkt / TCP(sport = 25 , dport=dport)
 
     '''
     print(listView)
@@ -271,7 +273,7 @@ def main():
     iface = get_if()
     send_DHCP(iface)
     # time.sleep(2)
-    # send_test(iface)
+    #send_test(iface)
     # correctness_openFile(iface)
 
 

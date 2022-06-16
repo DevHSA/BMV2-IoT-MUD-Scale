@@ -141,7 +141,7 @@ def readTableRules(p4info_helper, sw):
             for p in action.params:
                 print(p4info_helper.get_action_param_name(action_name, p.param_id), end=' ')
                 print('%r' % p.value, end=' ')
-            print()
+            print("---------------------------- \n")
 
 def printCounter(p4info_helper, sw, counter_name, index):
 
@@ -216,7 +216,7 @@ def main(p4info_file_path, bmv2_file_path):
 
         print("Installed ingress tunnel rule on %s" % s1.name)
         readTableRules(p4info_helper, s1)
-
+        
         s1.PacketIn(p4info_helper, s1, readTableRules)
 
 

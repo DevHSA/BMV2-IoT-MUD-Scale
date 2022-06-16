@@ -20,7 +20,7 @@ from abc import abstractmethod
 from datetime import datetime
 from queue import Queue
 import time
-
+from random import randint
 
 #Our MUD imports
 import requests
@@ -30,7 +30,7 @@ import sys
 
 
 ##Not at all a good practice
-sys.path.append("/home/p4/BMV2-P4-IoT-MUD/ScaleIoT/")
+sys.path.append("/home/p4/BMV2-IoT-MUD-Scale/ScaleIoT/")
 
 #Our Solution Imports
 from processMUD import readMUDFile
@@ -46,6 +46,38 @@ MSG_LOG_MAX_LEN = 1024
 
 # List containing all active connections
 connections = []
+
+seen = set()
+
+deviceList={1 : "amazonecho",
+           2 : "augustdoorbell",
+           3 : "awairairqualitymud",
+           4 : "belkincameramud",
+           5 : "canarycamera",
+           6 : "chromecastultra",
+           7 : "dropcam",
+           8 : "hellobarbie",
+           9 : "hpprint",
+           10 : "huebulb",
+           11 : "ihomepowerplug",
+           12 : "lifxbulb",
+           13 : "nestsmokesensor",
+           14 : "netatmocamera",
+           15 : "netatmoweatherstation",
+           16 : "pixstarphotoframe",
+           17 : "ringdoorbell",
+           18 : "samsungsmartcam",
+           19 : "smartthings",
+           20 : "tplinkcamera",
+           21 : "tplinkplug",
+           22 : "tribyspeaker",
+           23 : "wemomotion",
+           24 : "wemoswitch",
+           25 : "withingsbabymonitor",
+           26 : "withingscardio",
+           27 : "withingssleepsensor",
+           28 : "blipcarebpmeter"
+           }
 
 #function to shutdown all switch connections
 def ShutdownAllSwitchConnections():
@@ -95,7 +127,7 @@ class SwitchConnection(object):
 
         for item in self.stream_msg_resp:
 
-
+#CODE IS OMITTED FROM HERE--------------------------------------
             packetpayload = item.packet.payload
             packetString = packetpayload.hex()
             convertedAddress = packetString[12:24]
@@ -112,18 +144,40 @@ class SwitchConnection(object):
             MUDfilename = wordList[-1]
 
             #In case of router solicitation messages we ignore and listen to the stream again
-            if len(MUDfilename) == 0 :
-                continue
+            
+#CODE IS OMITTED TILL HERE-------------------------------------------------------
 
-            rootpath = "/home/p4/BMV2-P4-IoT-MUD/ScaleIoT/MUDFiles/"
+            rootpath = "/home/p4/BMV2-IoT-MUD-Scale/ScaleIoT/MUDFiles/"
 
             '''
 
-            Now we are downloading the MUD file, signed file and the public key file
+            Now we are downloading the MUD file, signed file
+             and the public key file
             using the MUD file name
 
             '''
+#new code added from here
+
+            if len(MUDfilename) == 0 :
+                continue
+            randomIP = ".".join(str(randint(0, 255)) for _ in range(4))
+            
+            DSCP = randint(1,28)
+
+
+
+            #testing only 
+            DSCP = 17
+            if (randomIP , DSCP) in seen :
+                return # we do not need to insert new rules anymore as the MUD file is already converted
+
+            seen.add((randomIP , DSCP))
+
             #saving Raw MUD file
+            MUDfilename = deviceList[DSCP] # this will give you the name of the device for downloading MUD file
+
+#new code is added till here
+
             rawMUDurl = 'http://127.0.0.1:443/' + MUDfilename
             rawRequest = requests.get(rawMUDurl, allow_redirects=True)
             rawMUDfile = rootpath + MUDfilename + '_file.json'
@@ -144,15 +198,15 @@ class SwitchConnection(object):
             try:
 
                 #verifying the signed file and raw file using the public key
-            	subprocess.check_output(["openssl", "dgst" ,"-sha256", "-verify" ,"/home/p4/BMV2-P4-IoT-MUD/ScaleIoT/MUDFiles/pub-key.pem", "-signature" , signedMUDfile, rawMUDfile]).decode("utf-8")
+                subprocess.check_output(["openssl", "dgst" ,"-sha256", "-verify" ,"/home/p4/BMV2-IoT-MUD-Scale/ScaleIoT/MUDFiles/pub-key.pem", "-signature" , signedMUDfile, rawMUDfile]).decode("utf-8")
 
             except subprocess.CalledProcessError as error:
 
-            	print((error.output).decode("utf-8"))
+                print((error.output).decode("utf-8"))
                 #removing the downloaded MUD files as the signature is not verified
-            	os.remove(rawMUDfile)
-            	os.remove(signedMUDfile)
-            	os.remove('pub-key.pem')
+                os.remove(rawMUDfile)
+                os.remove(signedMUDfile)
+                os.remove('pub-key.pem')
 
             '''
 
@@ -163,11 +217,12 @@ class SwitchConnection(object):
 
             milliseconds1 = int(time.time() * 1000)
 
-            pureACL = readMUDFile(rawMUDfile, IoTmacAddress)
+            pureACL = readMUDFile(rawMUDfile, randomIP, DSCP) #added random IP and DSCP ----- ********
             milliseconds2 = int(time.time() * 1000) - milliseconds1
 
             resolvedACL = resolve(pureACL)
             milliseconds3 = int(time.time() * 1000) - milliseconds1
+
 
             ##Save Resolved ACL
             resolvedACL.to_csv('template.csv', index=False);
@@ -178,20 +233,20 @@ class SwitchConnection(object):
             convertDT(resolvedACL, p4info_helper, s1, readTableRules)
             milliseconds4 = int(time.time() * 1000) - milliseconds1
 
-            '''
+            
 
-            printing the table rules for debugging purpose
-            print("All table rules are here")
-            readTableRules(p4info_helper, s1)
+            #printing the table rules for debugging purpose
+            # print("All table rules are here")
+            # readTableRules(p4info_helper, s1)
 
-            '''
+            
 
 
             print("Time in milliseconds after MUD file download", milliseconds1)
             print("Time in milliseconds after processMUD (Convert MUD file to ACL Rules)", milliseconds2)
             print("Time in milliseconds to resolve domain names", milliseconds3)
             print("Time in milliseconds after Convertion to Decision Tree ---> Send Table rules", milliseconds4)
-            
+        
 
     #DeleteTableEntry is useful for deleting the table rules when device is removed
 

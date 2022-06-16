@@ -23,49 +23,9 @@ tables {
 }
 tables {
   preamble {
-    id: 42783434
-    name: "MyIngress.sMAC_exact"
-    alias: "sMAC_exact"
-  }
-  match_fields {
-    id: 1
-    name: "hdr.ethernet.sEth"
-    bitwidth: 48
-    match_type: EXACT
-  }
-  action_refs {
-    id: 20313369
-  }
-  action_refs {
-    id: 19084811
-  }
-  size: 1024
-}
-tables {
-  preamble {
-    id: 44671406
-    name: "MyIngress.sMAC_default"
-    alias: "sMAC_default"
-  }
-  match_fields {
-    id: 1
-    name: "meta.stub_current_state_value"
-    bitwidth: 24
-    match_type: EXACT
-  }
-  action_refs {
-    id: 23236281
-  }
-  action_refs {
-    id: 25652968
-  }
-  size: 1024
-}
-tables {
-  preamble {
-    id: 42088615
-    name: "MyIngress.dMAC_exact"
-    alias: "dMAC_exact"
+    id: 37988917
+    name: "MyIngress.srcIP_exact"
+    alias: "srcIP_exact"
   }
   match_fields {
     id: 1
@@ -75,8 +35,8 @@ tables {
   }
   match_fields {
     id: 2
-    name: "hdr.ethernet.dEth"
-    bitwidth: 48
+    name: "hdr.ipv4.srcAddr"
+    bitwidth: 32
     match_type: EXACT
   }
   action_refs {
@@ -89,9 +49,9 @@ tables {
 }
 tables {
   preamble {
-    id: 46919436
-    name: "MyIngress.dMAC_default"
-    alias: "dMAC_default"
+    id: 39639397
+    name: "MyIngress.srcIP_default"
+    alias: "srcIP_default"
   }
   match_fields {
     id: 1
@@ -109,9 +69,9 @@ tables {
 }
 tables {
   preamble {
-    id: 42023087
-    name: "MyIngress.typEth_exact"
-    alias: "typEth_exact"
+    id: 41377875
+    name: "MyIngress.DSCP_exact"
+    alias: "DSCP_exact"
   }
   match_fields {
     id: 1
@@ -121,8 +81,8 @@ tables {
   }
   match_fields {
     id: 2
-    name: "hdr.ethernet.typeEth"
-    bitwidth: 16
+    name: "hdr.ipv4.diffserv"
+    bitwidth: 8
     match_type: EXACT
   }
   action_refs {
@@ -135,9 +95,9 @@ tables {
 }
 tables {
   preamble {
-    id: 35466170
-    name: "MyIngress.typEth_default"
-    alias: "typEth_default"
+    id: 45573662
+    name: "MyIngress.DSCP_default"
+    alias: "DSCP_default"
   }
   match_fields {
     id: 1
@@ -201,52 +161,6 @@ tables {
 }
 tables {
   preamble {
-    id: 49805624
-    name: "MyIngress.sPort_exact"
-    alias: "sPort_exact"
-  }
-  match_fields {
-    id: 1
-    name: "meta.current_state"
-    bitwidth: 24
-    match_type: EXACT
-  }
-  match_fields {
-    id: 2
-    name: "meta.sport"
-    bitwidth: 16
-    match_type: EXACT
-  }
-  action_refs {
-    id: 20313369
-  }
-  action_refs {
-    id: 21257015
-  }
-  size: 1024
-}
-tables {
-  preamble {
-    id: 44026829
-    name: "MyIngress.sPort_default"
-    alias: "sPort_default"
-  }
-  match_fields {
-    id: 1
-    name: "meta.current_state"
-    bitwidth: 24
-    match_type: EXACT
-  }
-  action_refs {
-    id: 23236281
-  }
-  action_refs {
-    id: 25652968
-  }
-  size: 1024
-}
-tables {
-  preamble {
     id: 37196547
     name: "MyIngress.dPort_exact"
     alias: "dPort_exact"
@@ -276,52 +190,6 @@ tables {
     id: 41953047
     name: "MyIngress.dPort_default"
     alias: "dPort_default"
-  }
-  match_fields {
-    id: 1
-    name: "meta.current_state"
-    bitwidth: 24
-    match_type: EXACT
-  }
-  action_refs {
-    id: 23236281
-  }
-  action_refs {
-    id: 25652968
-  }
-  size: 1024
-}
-tables {
-  preamble {
-    id: 37988917
-    name: "MyIngress.srcIP_exact"
-    alias: "srcIP_exact"
-  }
-  match_fields {
-    id: 1
-    name: "meta.current_state"
-    bitwidth: 24
-    match_type: EXACT
-  }
-  match_fields {
-    id: 2
-    name: "hdr.ipv4.srcAddr"
-    bitwidth: 32
-    match_type: EXACT
-  }
-  action_refs {
-    id: 20313369
-  }
-  action_refs {
-    id: 21257015
-  }
-  size: 1024
-}
-tables {
-  preamble {
-    id: 39639397
-    name: "MyIngress.srcIP_default"
-    alias: "srcIP_default"
   }
   match_fields {
     id: 1
@@ -425,13 +293,6 @@ actions {
     id: 2
     name: "switchPort"
     bitwidth: 9
-  }
-}
-actions {
-  preamble {
-    id: 19084811
-    name: "MyIngress.default_action_one"
-    alias: "default_action_one"
   }
 }
 actions {

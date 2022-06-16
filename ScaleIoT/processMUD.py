@@ -39,11 +39,11 @@ def getSourceDestination(data):
     return data.get(src_net_key, '*'), data.get(dest_net_key, '*'), data.get('protocol', '*')
 
 #Main Function
-def readMUDFile(pathName, IoTmacAddress):
+def readMUDFile(pathName, randomIP, DSCP):
     # print("INSIDE READMUDFILE")
 
 
-    files=os.listdir("/home/p4/BMV2-P4-IoT-MUD/ScaleIoT/MUDFiles/")
+    files=os.listdir("/home/p4/BMV2-IoT-MUD-Scale/ScaleIoT/MUDFiles/")
     data = []
     df = None
 
@@ -53,6 +53,7 @@ def readMUDFile(pathName, IoTmacAddress):
     f.close()
 
     final_list = []
+
     for i in range(len(data)):
 
         access_json=data[i].get('ietf-access-control-list:access-lists').get('acl')
@@ -62,20 +63,23 @@ def readMUDFile(pathName, IoTmacAddress):
         source-mac-address, dest-mac-address, etc
         '''
 
+
         for acl in access_json:
             aces = acl['aces']['ace'] 
+            
+            
             for ace in aces:
                 final_row = {
-                'sMAC': '*',
-                'dMAC': '*',
-                'typEth': '*',
+                # 'sMAC': '*',
+                # 'dMAC': '*',
+                # 'typEth': '*',
                 }
 
                 #MAC
-                if 'ethertype' in str(ace['matches']):
-                    final_row['sMAC'] = ace['matches']['eth'].get('source-mac-address', '*')
-                    final_row['dMAC'] = ace['matches']['eth'].get('destination-mac-address', '*')
-                    final_row['typEth'] = ace['matches']['eth'].get('ethertype', '*')
+                # if 'ethertype' in str(ace['matches']):
+                #     final_row['sMAC'] = ace['matches']['eth'].get('source-mac-address', '*')
+                #     final_row['dMAC'] = ace['matches']['eth'].get('destination-mac-address', '*')
+                #     final_row['typEth'] = ace['matches']['eth'].get('ethertype', '*')
 
                 #IP
                 if 'ipv4' in str(ace['matches']):
@@ -83,8 +87,8 @@ def readMUDFile(pathName, IoTmacAddress):
                     final_row['srcIP'] = source
                     final_row['dstIP'] = dest
                     final_row['proto'] = proto
-                    if proto in [1,6,17] :
-                        final_row['typEth']='0x0800'
+                    # if proto in [1,6,17] :
+                    #     final_row['typEth']='0x0800'
 
                 elif 'ipv6' in str(ace['matches']):
                     source, dest, proto = getSourceDestination(ace['matches']['ipv6'])
@@ -103,19 +107,19 @@ def readMUDFile(pathName, IoTmacAddress):
                     #     final_row['typEth']='0x0800'
 
                 #type and code
-                if 'icmp' in str(ace['matches']):
-                    final_row['type'] = ace['matches']['icmp'].get('type', '*')
-                    final_row['code'] = ace['matches']['icmp'].get('code', '*')
-                else:
-                    final_row['type'] = '*'
-                    final_row['code'] = '*'
+                # if 'icmp' in str(ace['matches']):
+                #     final_row['type'] = ace['matches']['icmp'].get('type', '*')
+                #     final_row['code'] = ace['matches']['icmp'].get('code', '*')
+                # else:
+                #     final_row['type'] = '*'
+                #     final_row['code'] = '*'
 
 
-                #sport
-                if 'source-port' in str(ace['matches']):
-                    final_row['sPort'] = ace['matches']['udp']['source-port'].get('port', '*') if 'udp' in str(ace['matches']) else ace['matches']['tcp']['source-port'].get('port', '*')
-                else:
-                    final_row['sPort'] = '*'
+                # #sport
+                # if 'source-port' in str(ace['matches']):
+                #     final_row['sPort'] = ace['matches']['udp']['source-port'].get('port', '*') if 'udp' in str(ace['matches']) else ace['matches']['tcp']['source-port'].get('port', '*')
+                # else:
+                #     final_row['sPort'] = '*'
 
                 #destport
                 if 'destination-port' in str(ace['matches']):
@@ -128,23 +132,26 @@ def readMUDFile(pathName, IoTmacAddress):
                 final_row['action'] = 'forward' if ace['actions'].get('forwarding', '') == 'accept' else '*'
 
 
-                if final_row['srcIP'] == '*' and final_row['dstIP'] != '*':
-                    final_row['sMAC'] = IoTmacAddress#'9e:8d:de:80:29:28'
+                # if final_row['srcIP'] == '*' and final_row['dstIP'] != '*':
+                #     final_row['sMAC'] = IoTmacAddress#'9e:8d:de:80:29:28'
 
-                if final_row['dstIP'] == '*' and final_row['srcIP'] != '*':
-                    final_row['dMAC'] = IoTmacAddress#'9e:8d:de:80:29:28'
+                # if final_row['dstIP'] == '*' and final_row['srcIP'] != '*':
+                #     final_row['dMAC'] = IoTmacAddress#'9e:8d:de:80:29:28'
 
                 '''
                 After generating the "final_row" based on the values
                 in the json file, we will now append it to the final_list
                 '''
-
+                final_row['srcIP'] = randomIP
+                final_row['DSCP'] = DSCP
                 final_list.append(final_row)
 
     df = pd.DataFrame(final_list)
     df.head()
 
-    columns = ['sMAC','dMAC','typEth','srcIP','dstIP','proto','sPort','dPort','action']
+    #columns = ['sMAC','dMAC','typEth','srcIP','dstIP','proto','sPort','dPort','action']
+
+    columns = ['srcIP','DSCP','proto','dPort','dstIP', 'action']
     df1 = df[columns]
 
     '''
@@ -157,7 +164,7 @@ def readMUDFile(pathName, IoTmacAddress):
     for column in columns:
         df2[column] = df2[column].fillna('*')
 
-    # print(df2)
+    
     # milliseconds = int(time.time() * 1000)
     # print("Time in milliseconds at processMUD (Convert MUD file to ACL Rules)", milliseconds)
 

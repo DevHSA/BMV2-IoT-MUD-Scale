@@ -53,13 +53,15 @@ def domainResolver(domainName):
                 return resolvedDomains[domainName]
 
 # MAIN FUNCTION
+
+
 def resolve(pureACL):
 
-    print(pureACL)
+    
     # print(pureACL.iterrows())
 
     for index,row in pureACL.iterrows():
-        
+            
         # print("count = ", count)
         # count+=1
         #print(index)
@@ -87,8 +89,36 @@ def resolve(pureACL):
 
         if row['dstIP'] != '*':
             pureACL.at[index,'dstIP'] = domainResolver(row['dstIP'])
+        
+
+    print(pureACL)
+
+    for i in range(2,5):
+
+        colname = pureACL.columns[i]
+
+        uni1 = set(pureACL[colname].unique())
+
+        uni1.remove('*')
+        
+        for index,row in pureACL.iterrows():
+            
+            if row[i] == '*':
+                x = row.copy()
+                for newval in uni1:
+                    x[i] = newval
+
+                    new_df = pd.DataFrame([x])
+                    pureACL = pd.concat([pureACL, new_df], axis=0, ignore_index=True)
+                    # pureACL.loc[len(pureACL)] = x
+
+    print("resolved acl after unfurling all")
+    print(pureACL)
 
     return pureACL
+
+
+  
 
 # ##INPUT: separate ACL lists of IoT Devices derived from MUD profiles
 # ##OUTPUT: file named GeneratedDatasetACL.csv in the same folder
